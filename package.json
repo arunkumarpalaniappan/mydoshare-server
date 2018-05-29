@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "node cluster.js",
+    "start": "node createConfig && node cluster.js",
     "dev": "nodemon index.js"
   },
   "repository": {
