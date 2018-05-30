@@ -1,5 +1,6 @@
 const Joi = require("joi");
 const users = require("../controllers/users");
+const groups = require("../controllers/groups");
 module.exports = [
     {
         path: '/',
@@ -33,7 +34,23 @@ module.exports = [
                 payload : {
                     'name': Joi.string().required(),
                     'email': Joi.string().required(),
-                    'password': Joi.string().required()                    
+                    'password': Joi.string().required(),
+                    'grps': Joi.array().optional(),
+                    'verified': Joi.bool().optional()                    
+                }
+            }
+        }
+    },
+    {
+        path: '/group',
+        method: 'CREATE',
+        config: {
+            handler: groups.create,
+            auth: "jwt",
+            validate: {
+                payload: {
+                    'name': Joi.string().required(),
+                    'users': Joi.array().required()
                 }
             }
         }
