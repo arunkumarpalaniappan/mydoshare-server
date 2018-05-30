@@ -43,13 +43,34 @@ module.exports = [
     },
     {
         path: '/group',
-        method: 'CREATE',
+        method: 'POST',
         config: {
             handler: groups.create,
-            auth: "jwt",
+            auth: 'jwt',
             validate: {
                 payload: {
                     'name': Joi.string().required(),
+                    'users': Joi.array().required()
+                }
+            }
+        }
+    },
+    {
+        path: '/group/{id}',
+        method: 'GET',
+        config: {
+            handler: groups.get,
+            auth: 'jwt'
+        }
+    },
+    {
+        path: '/group/{id}',
+        method: 'PUT',
+        config: {
+            handler: groups.update,
+            auth: 'jwt',
+            validate: {
+                payload: {
                     'users': Joi.array().required()
                 }
             }
