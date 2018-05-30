@@ -21,7 +21,8 @@ const data = {
         "user": process.env.DB_USER || "arunkumar",
         "pwd": process.env.DB_PWD || "password",
         "host": process.env.DB_HOST || "localhost",
-        "name": process.env.DB_NAME || "mydoshare"
+        "name": process.env.DB_NAME || "mydoshare",
+        "port": process.env.DB_PORT || 27017
     }
   }
 
