@@ -1,6 +1,5 @@
-const Promise = require("bluebird");
-const {_groupsSchema} = require("../lib/db");
 
+const {_groupsSchema,_customSchema} = require("../lib/db");
 exports.create = function () {
     return new Promise((resolve,reject) => {
         _groupsSchema.find({name: this.name}).then(grp => {
@@ -10,7 +9,12 @@ exports.create = function () {
                     if (err) {
                         reject(err);
                     }
-                    resolve(res);
+                    exports.createGroupExpenses.call(this).then(exp => {
+                        resolve(exp)
+                    })
+                    .catch(err => {
+                        reject(err);
+                    })
                 });
             } else {
                 reject({code: 1006, msg: "Group already exists."});
@@ -42,5 +46,26 @@ exports.update = function () {
                 reject({code: 1007, msg: "Group doesn't exists."})
             }
         });
+    })
+};
+
+exports.createGroupExpenses = function () {
+    return new Promise((resolve,reject) => {
+        const customSchema = _customSchema(this.name)
+        customSchema(this.name).find({name: this.name}).then(group => {
+            if(!group.length) {
+                let group = new customSchema(this.name);
+                group.users = [this.user._id];
+                group.save(function (err, res) {
+                    if (err) {
+                        console.log(err)
+                        reject(err);
+                    }
+                    resolve(res);
+                });
+            } else {
+                reject({code: 1008, msg: "Group already exists"});
+            }
+        })
     })
 }

@@ -6,7 +6,7 @@ const bunyan = require('bunyan');
 const PrettyStream = require('bunyan-prettystream');
 const env = process.env.NODE_ENV;
 const routes = require('./routes/routes.js');
-const isValidUser = require("./lib/userAuthentication").isValidUser;
+const isValidUser = require("./lib/userAuthentication").validateUser;
 //Making jwt token immutable
 Object.freeze(config.get('jwt'));
 //logs with pretty stream only on development mode

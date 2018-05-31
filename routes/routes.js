@@ -49,8 +49,7 @@ module.exports = [
             auth: 'jwt',
             validate: {
                 payload: {
-                    'name': Joi.string().required(),
-                    'users': Joi.array().required()
+                    'name': Joi.string().required()
                 }
             }
         }
