@@ -1,22 +1,31 @@
 
-const {_groupsSchema,_customSchema} = require("../lib/db");
+const {_usersSchema, _groupsSchema, _customSchema} = require("../lib/db");
 exports.create = function () {
     return new Promise((resolve,reject) => {
         _groupsSchema.find({name: this.name}).then(grp => {
             if(!grp.length) {
-                let group = new _groupsSchema(this.name);
+                let group = new _groupsSchema({name: this.name});
                 group.save((err, res) => {
                     if (err) {
                         console.log(err);
                         reject(err);
                     }
+                    this.id = res._id;
                     exports.createGroupExpenses.call(this).then(exp => {
-                        resolve(exp)
+                        _usersSchema.find({_id: this.user._id}).then(usr => {
+                            if(usr.length) {
+                                _usersSchema.update({ _id: this._id }, { $set: { grps: [...usr[0].grps, ...this.id] }})
+                                .then(resp => resolve(resp))
+                                .catch(err => reject(err));
+                            } else {
+                                reject({code: 1007, msg: "Group doesn't exists."})
+                            }
+                        });
                     })
                     .catch(err => {
                         console.log(err);
                         reject(err);
-                    })
+                    });
                 });
             } else {
                 reject({code: 1006, msg: "Group already exists."});
@@ -53,13 +62,11 @@ exports.update = function () {
 
 exports.createGroupExpenses = function () {
     return new Promise((resolve,reject) => {
-        console.log(this.name)
-        const customSchema = _customSchema(this.name)
+        const customSchema = _customSchema(this.id)
         customSchema.find({name: this.name}).then(group => {
             if(!group.length) {
-                console.log(this)
-                let group = new customSchema(this.name);
-                group.users = [payload.user._id];
+                let group = new customSchema({name:this.name});
+                group.users = [this.user._id];
                 group.save((err, res) => {
                     if (err) {
                         console.log(err)
