@@ -5,7 +5,7 @@ exports.create = (request,response) => {
     payload.user = request.auth.credentials;
     return Groups.create.call(payload)
         .then(group => group)
-        .catch(err => Boom.badRequest(err.code));
+        .catch(err => err);
 }
 exports.get = (request,response) => {
     const params = request.params;
