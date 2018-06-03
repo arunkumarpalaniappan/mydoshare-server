@@ -74,5 +74,26 @@ module.exports = [
                 }
             }
         }
+    },
+    {
+        path: '/group/{id}',
+        method: 'DELETE',
+        config: {
+            handler: groups.remove,
+            auth: 'jwt',
+            validate: {
+                payload: {
+                    'users': Joi.array().required()
+                }
+            }
+        }
+    },
+    {
+        path: '/verify/{id}',
+        method: 'GET',
+        config: {
+            handler: users.verify,
+            auth: false
+        }
     }
 ];

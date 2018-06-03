@@ -15,8 +15,16 @@ exports.get = (request,response) => {
 }
 exports.update = (request,response) => {
     const payload = request.payload;
+    payload.user = request.auth.credentials;
     const params = request.params;
     return Groups.update.call({_id:params.id,users:payload.users})
         .then(res => res)
         .catch(err =>err);
+}
+exports.remove = (request,response) => {
+    const payload = request.payload;
+    const params = request.params;
+    return Groups.remove.call({_id:params.id,users:payload.users})
+        .then(removed => removed)
+        .catch(unableToRemove => unableToRemove);
 }

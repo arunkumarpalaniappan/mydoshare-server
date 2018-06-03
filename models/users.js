@@ -1,7 +1,8 @@
 const Promise = require("bluebird");
 const { isValidUser, generateHash } = require("../lib/userAuthentication");
+const { sendVerification } = require("../lib/email");
 const { _usersSchema } = require("../lib/db");
-
+const config = require("config");
 exports.authenticateUser = function () {
     return new Promise((resolve, reject) => {
         isValidUser(this).then(response => {
@@ -23,11 +24,14 @@ exports.registerUser = function () {
                 generateHash(this.password).then(hash => {
                     this.pwd = hash;
                     let user = new _usersSchema(this);
-                    user.save(function (err, res) {
+                    user.save( (err, res) => {
                         if (err) {
                             reject(err);
                         }
-                        resolve(res);
+                        const signedUrl = `http://${config.email.url}/verify/${res._id}`;
+                        sendVerification.call({email : res.email, signedUrl})
+                        .then(res => resolve(res))
+                        .catch(err => reject(err));
                     });
                 })
                 .catch(err => err);                
@@ -36,4 +40,47 @@ exports.registerUser = function () {
             }
         });
     })
+}
+
+exports.verify = function() {
+    return new Promise((resolve,reject) => {
+        _usersSchema.find({_id: this.id}).then(usr => {
+            if (usr.length) {
+                if(usr[0].verified) {
+                    reject({code: 1009, mdg: 'Invalid Link'});
+                } else {
+                    _usersSchema.update({
+                        _id: usr[0]._id
+                    }, {
+                        $set: {
+                            verified: true
+                        }
+                    })
+                    .then(resp => {
+                        resolve({code: 2002, msg: 'User Verified'});
+                    })
+                    .catch(err => reject(err));
+                    }
+                } else {
+                    reject({ code: 1001, msg: 'Invalid User' });
+                }
+            })
+            .catch(err => reject(err));
+    });
+};
+
+exports.inviteUser = function() {
+    return new Promise((resolve,reject) => {
+        _usersSchema.find({_id: this.id}).then(usr => {
+            if (!usr.length) {
+                    const signedUrl = `http://${config.email.url}/verify/${res._id}`;
+                    sendVerification.call({email : res.email, signedUrl})
+                    .then(res => resolve(res))
+                    .catch(err => reject(err));
+                } else {
+                    reject({ code: 1005, msg: 'User already exists' });
+                }
+            })
+            .catch(err => reject(err));
+    });
 }

@@ -19,13 +19,16 @@ exports.create = function () {
                     }
                     this.id = res._id;
                     exports.createGroupExpenses.call(this).then(exp => {
-                            exports.joinUsertoGroup.call({user_id: this.user._id, grp_id: this.id})
-                            .then(addusr => {
-                                resolve(addusr);
-                            })
-                            .catch(addusrerr => {
-                                reject(addusrerr);
-                            });
+                            exports.joinUsertoGroup.call({
+                                    user_id: this.user._id,
+                                    grp_id: this.id
+                                })
+                                .then(addusr => {
+                                    resolve(addusr);
+                                })
+                                .catch(addusrerr => {
+                                    reject(addusrerr);
+                                });
                         })
                         .catch(err => {
                             reject(err);
@@ -64,12 +67,9 @@ exports.update = function () {
             _id: this._id
         }).then(grp => {
             if (grp.length) {
-                _groupsSchema.update({
-                        _id: this._id
-                    }, {
-                        $set: {
-                            users: [...grp[0].users, ...this.users].filter(onlyUnique)
-                        }
+                exports.joinUsertoGroup.call({
+                        user_id: this.user._id,
+                        grp_id: this._id
                     })
                     .then(res => resolve(res))
                     .catch(err => reject(err));
@@ -77,10 +77,10 @@ exports.update = function () {
                 reject({
                     code: 1007,
                     msg: "Group doesn't exists."
-                })
+                });
             }
         });
-    })
+    });
 };
 
 exports.createGroupExpenses = function () {
@@ -109,7 +109,7 @@ exports.createGroupExpenses = function () {
             }
         });
     })
-}
+};
 
 exports.joinUsertoGroup = function () {
     return new Promise((resolve, reject) => {
@@ -140,12 +140,13 @@ exports.joinUsertoGroup = function () {
                                         })
                                         .then(grpresp => {
                                             const customSchema = _customSchema(this.grp_id);
-                                            const newAddition = {
-                                            } ;
+                                            const newAddition = {};
                                             newAddition[`${this.user_id}_exp`] = [];
                                             newAddition[`${this.user_id}_paid`] = [];
                                             const paidName = `${this.user_id}_paid`;
-                                            customSchema.update({}, newAddition, { multi: true })
+                                            customSchema.update({}, newAddition, {
+                                                    multi: true
+                                                })
                                                 .then(schemaresp => {
                                                     resolve(schemaresp);
                                                 })
@@ -176,4 +177,77 @@ exports.joinUsertoGroup = function () {
             })
             .catch(usrerr => reject(usrerr));
     });
-}
+};
+
+exports.remove = function () {
+    return new Promise((resolve, reject) => {
+        _groupsSchema.find({
+            _id: this._id
+        }).then(grp => {
+            if (grp.length) {
+                _usersSchema.find({
+                        _id: this.user_id
+                    }).then(usr => {
+                        if (usr.length) {
+                            const grpindex = usr[0].grps.indexOf(this.grp_id);
+                            if (grpindex > -1) {
+                                usr[0].grps.splice(grpindex, 1);
+                            }
+                            _usersSchema.update({
+                                    _id: this.user_id
+                                }, {
+                                    $set: {
+                                        grps: usr[0].grps.filter(onlyUnique)
+                                    }
+                                })
+                                .then(resp => {
+                                    _groupsSchema.find({
+                                        _id: this.grp_id
+                                    }).then(grp => {
+                                        if (grp.length) {
+                                            const usrIndex = grp[0].users.indexOf(this.user_id);
+                                            if (usrIndex > -1) {
+                                                grp[0].users.splice(usrIndex, 1);
+                                            }
+                                            _groupsSchema.update({
+                                                    _id: this.grp_id
+                                                }, {
+                                                    $set: {
+                                                        users: grp[0].users.filter(onlyUnique)
+                                                    }
+                                                })
+                                                .then(grpresp => {
+                                                    resolve(grpresp);
+                                                })
+                                                .catch(grperr => {
+                                                    reject(grperr);
+                                                })
+                                        } else {
+                                            reject({
+                                                code: 1007,
+                                                msg: "Group doesn't exists."
+                                            })
+                                        }
+                                    });
+                                })
+                                .catch(err => {
+                                    reject(err)
+                                });
+                        } else {
+                            reject({
+                                code: 1001,
+                                msg: "Invalid User"
+                            })
+                        }
+                    })
+                    .catch(usrerr => reject(usrerr));
+            } else {
+                reject({
+                    code: 1007,
+                    msg: "Group doesn't exists."
+                });
+            }
+        });
+    });
+};
+
