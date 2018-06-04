@@ -95,5 +95,19 @@ module.exports = [
             handler: users.verify,
             auth: false
         }
+    },
+    {
+        path: '/invite',
+        method: 'POST',
+        config: {
+            handler: users.invite,
+            auth: 'jwt',
+            validate: {
+                payload: {
+                    'email': Joi.string().required(),
+                    'grp_id': Joi.string().required()
+                }
+            }
+        }
     }
 ];

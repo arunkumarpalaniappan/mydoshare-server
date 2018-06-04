@@ -1,6 +1,6 @@
 const Promise = require("bluebird");
 const { isValidUser, generateHash } = require("../lib/userAuthentication");
-const { sendVerification } = require("../lib/email");
+const { sendVerification, sendInvite } = require("../lib/email");
 const { _usersSchema } = require("../lib/db");
 const config = require("config");
 exports.authenticateUser = function () {
@@ -71,10 +71,10 @@ exports.verify = function() {
 
 exports.inviteUser = function() {
     return new Promise((resolve,reject) => {
-        _usersSchema.find({_id: this.id}).then(usr => {
+        _usersSchema.find({_id: this.email}).then(usr => {
             if (!usr.length) {
-                    const signedUrl = `http://${config.email.url}/verify/${res._id}`;
-                    sendVerification.call({email : res.email, signedUrl})
+                    const signedUrl = `http://${config.email.url}/signup/${atob(this.email+'_mds_'+this.grp_id)}`;
+                    sendInvite.call({email : this.email, signedUrl, invitee: this.user.name})
                     .then(res => resolve(res))
                     .catch(err => reject(err));
                 } else {

@@ -21,3 +21,10 @@ exports.verify = (request, response) => {
         .then(user => user)
         .catch(err => Boom.badRequest(err.code));
 }
+exports.invite = (request, response) => {
+    const payload = request.payload;
+    payload.user = request.auth.credentials;
+    return Users.inviteUser.call(payload)
+        .then(invited => invited)
+        .catch(err => Boom.badRequest(err.code))
+}
