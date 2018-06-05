@@ -1,6 +1,7 @@
 const Joi = require("joi");
 const users = require("../controllers/users");
 const groups = require("../controllers/groups");
+const expenses = require("../controllers/expenses");
 module.exports = [
     {
         path: '/',
@@ -106,6 +107,20 @@ module.exports = [
                 payload: {
                     'email': Joi.string().required(),
                     'grp_id': Joi.string().required()
+                }
+            }
+        }
+    },
+    {
+        path: '/expense',
+        method: 'POST',
+        config: {
+            handler: expenses.create,
+            auth: 'jwt',
+            validate: {
+                payload: {
+                    'id': Joi.string().required(),
+                    'expenses': Joi.array().required()
                 }
             }
         }

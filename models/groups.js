@@ -108,7 +108,7 @@ exports.createGroupExpenses = function () {
                 });
             }
         });
-    })
+    });
 };
 
 exports.joinUsertoGroup = function () {
