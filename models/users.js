@@ -1,6 +1,6 @@
 const Promise = require("bluebird");
 const { isValidUser, generateHash } = require("../lib/userAuthentication");
-const { sendVerification, sendInvite } = require("../lib/email");
+const { sendVerification, sendInvite, sendWelcome } = require("../lib/email");
 const { _usersSchema } = require("../lib/db");
 const config = require("config");
 exports.authenticateUser = function () {
@@ -47,7 +47,7 @@ exports.verify = function() {
         _usersSchema.find({_id: this.id}).then(usr => {
             if (usr.length) {
                 if(usr[0].verified) {
-                    reject({code: 1009, mdg: 'Invalid Link'});
+                    reject({code: 1009, msg: 'Invalid Link'});
                 } else {
                     _usersSchema.update({
                         _id: usr[0]._id
@@ -57,7 +57,9 @@ exports.verify = function() {
                         }
                     })
                     .then(resp => {
-                        resolve({code: 2002, msg: 'User Verified'});
+                        sendWelcome.call({email: usr[0].email, name: usr[0].name})
+                            .then(res => resolve({code: 2002, msg: 'User Verified'}))
+                            .catch(err => reject(err));
                     })
                     .catch(err => reject(err));
                     }
