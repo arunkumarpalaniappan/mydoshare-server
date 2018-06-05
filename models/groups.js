@@ -130,33 +130,39 @@ exports.joinUsertoGroup = function () {
                                 _id: this.grp_id
                             }).then(grp => {
                                 if (grp.length) {
-                                    grp[0].users = this.user_id;
-                                    _groupsSchema.update({
-                                            _id: this.grp_id
-                                        }, {
-                                            $set: {
-                                                users: grp[0].users.filter(onlyUnique)
-                                            }
-                                        })
-                                        .then(grpresp => {
-                                            const customSchema = _customSchema(this.grp_id);
-                                            const newAddition = {};
-                                            newAddition[`${this.user_id}_exp`] = [];
-                                            newAddition[`${this.user_id}_paid`] = [];
-                                            const paidName = `${this.user_id}_paid`;
-                                            customSchema.update({}, newAddition, {
-                                                    multi: true
-                                                })
-                                                .then(schemaresp => {
-                                                    resolve(schemaresp);
-                                                })
-                                                .catch(schemaerr => {
-                                                    reject(schemaerr);
-                                                })
-                                        })
-                                        .catch(grperr => {
-                                            reject(grperr);
-                                        })
+                                    if(grp[0].users[this.user_id]) {
+                                        reject({code:1010, msg: 'User already in the group'});
+                                    } else {
+                                        const userGrp = {};
+                                        userGrp[this.user_id] = usr[0].name;
+                                        grp[0].users[grp[0].users.length] = userGrp
+                                        _groupsSchema.update({
+                                                _id: this.grp_id
+                                            }, {
+                                                $set: {
+                                                    users: grp[0].users
+                                                }
+                                            })
+                                            .then(grpresp => {
+                                                const customSchema = _customSchema(this.grp_id);
+                                                const newAddition = {};
+                                                newAddition[`${this.user_id}_exp`] = [];
+                                                newAddition[`${this.user_id}_paid`] = [];
+                                                const paidName = `${this.user_id}_paid`;
+                                                customSchema.update({}, newAddition, {
+                                                        multi: true
+                                                    })
+                                                    .then(schemaresp => {
+                                                        resolve(schemaresp);
+                                                    })
+                                                    .catch(schemaerr => {
+                                                        reject(schemaerr);
+                                                    })
+                                            })
+                                            .catch(grperr => {
+                                                reject(grperr);
+                                            })
+                                    }
                                 } else {
                                     reject({
                                         code: 1007,
