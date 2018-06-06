@@ -28,3 +28,9 @@ exports.invite = (request, response) => {
         .then(invited => invited)
         .catch(err => Boom.badRequest(err.code))
 }
+exports.resetPassword = (request, response) => {
+    const payload = request.payload;
+    return Users.resetPassword.call(payload)
+        .then(user => user)
+        .catch(err => Boom.badRequest(err.code));
+}

@@ -1,6 +1,6 @@
 const Promise = require("bluebird");
 const { isValidUser, generateHash } = require("../lib/userAuthentication");
-const { sendVerification, sendInvite, sendWelcome } = require("../lib/email");
+const { sendVerification, sendInvite, sendWelcome, sendReset } = require("../lib/email");
 const { _usersSchema } = require("../lib/db");
 const config = require("config");
 exports.authenticateUser = function () {
@@ -73,7 +73,7 @@ exports.verify = function() {
 
 exports.inviteUser = function() {
     return new Promise((resolve,reject) => {
-        _usersSchema.find({_id: this.email}).then(usr => {
+        _usersSchema.find({email: this.email}).then(usr => {
             if (!usr.length) {
                     const signedUrl = `http://${config.email.url}/signup/${atob(this.email+'_mds_'+this.grp_id)}`;
                     sendInvite.call({email : this.email, signedUrl, invitee: this.user.name})
@@ -84,5 +84,32 @@ exports.inviteUser = function() {
                 }
             })
             .catch(err => reject(err));
+    });
+}
+
+exports.resetPassword = function() {
+    return new Promise((resolve, reject) => {
+        _usersSchema.find({email: this.email}).then(usr => {
+            if(usr.length){
+                const uniqueResetHash = usr[0].id + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+                _usersSchema.update({
+                    _id: usr[0]._id
+                }, {
+                    $set: {
+                        passwordReset: uniqueResetHash
+                    }
+                })
+                .then(resp => {
+                    const signedUrl = `http://${config.email.url}/reset/${uniqueResetHash}`;
+                    sendReset.call({email: usr[0].email, signedUrl})
+                        .then(res => resolve({code: 2003, msg: 'Reset Email Sent'}))
+                        .catch(err => reject(err));
+                })
+                .catch(err => reject(err));
+            } else {
+                reject({ code: 1001, msg: 'Invalid User'});
+            }
+        })
+        .catch(err => reject(err));
     });
 }

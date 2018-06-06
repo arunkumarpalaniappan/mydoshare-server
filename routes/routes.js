@@ -124,5 +124,18 @@ module.exports = [
                 }
             }
         }
+    },
+    {
+        path: '/forgotPassword',
+        method: 'POST',
+        config: {
+            handler: users.resetPassword,
+            auth: false,
+            validate: {
+                payload: {
+                    email: Joi.string().required()
+                }
+            }
+        }
     }
 ];
