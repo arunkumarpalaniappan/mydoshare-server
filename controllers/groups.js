@@ -17,14 +17,14 @@ exports.update = (request,response) => {
     const payload = request.payload;
     payload.user = request.auth.credentials;
     const params = request.params;
-    return Groups.update.call({_id:params.id,users:payload.users})
+    return Groups.update.call({_id:params.id,user:payload.user_id})
         .then(res => res)
         .catch(err =>err);
 }
 exports.remove = (request,response) => {
     const payload = request.payload;
     const params = request.params;
-    return Groups.remove.call({_id:params.id,users:payload.users})
+    return Groups.remove.call({_id:params.id,user:payload.user_id})
         .then(removed => removed)
         .catch(unableToRemove => unableToRemove);
 }

@@ -71,7 +71,7 @@ module.exports = [
             auth: 'jwt',
             validate: {
                 payload: {
-                    'users': Joi.array().required()
+                    'user_id': Joi.string().required()
                 }
             }
         }
@@ -84,7 +84,7 @@ module.exports = [
             auth: 'jwt',
             validate: {
                 payload: {
-                    'users': Joi.array().required()
+                    'user_id': Joi.string().required()
                 }
             }
         }

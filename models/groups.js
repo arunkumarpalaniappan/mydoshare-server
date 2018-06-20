@@ -67,8 +67,8 @@ exports.update = function () {
             _id: this._id
         }).then(grp => {
             if (grp.length) {
-                exports.joinUsertoGroup.call({
-                        user_id: this.user._id,
+                    exports.joinUsertoGroup.call({
+                        user_id: this.user,
                         grp_id: this._id
                     })
                     .then(res => resolve(res))
@@ -186,37 +186,45 @@ exports.joinUsertoGroup = function () {
 };
 
 exports.remove = function () {
+    console.log(this)
     return new Promise((resolve, reject) => {
         _groupsSchema.find({
             _id: this._id
         }).then(grp => {
             if (grp.length) {
                 _usersSchema.find({
-                        _id: this.user_id
+                        _id: this.user
                     }).then(usr => {
                         if (usr.length) {
-                            const grpindex = usr[0].grps.indexOf(this.grp_id);
+                            const grpindex = usr[0].grps.indexOf(this._id);
+                            console.log(grpindex);
                             if (grpindex > -1) {
                                 usr[0].grps.splice(grpindex, 1);
                             }
+                            console.log(usr[0].grps)
                             _usersSchema.update({
-                                    _id: this.user_id
+                                    _id: this.user
                                 }, {
                                     $set: {
                                         grps: usr[0].grps.filter(onlyUnique)
                                     }
                                 })
                                 .then(resp => {
+                                    console.log(this)
                                     _groupsSchema.find({
-                                        _id: this.grp_id
+                                        _id: this._id
                                     }).then(grp => {
                                         if (grp.length) {
-                                            const usrIndex = grp[0].users.indexOf(this.user_id);
+                                            console.log(Object.keys(grp[0].users))
+                                            
+                                            const usrIndex = Object.keys(grp[0].users).indexOf(this.user);
+                                            console.log(usrIndex)
                                             if (usrIndex > -1) {
                                                 grp[0].users.splice(usrIndex, 1);
                                             }
+                                            console.log(grp[0].users)
                                             _groupsSchema.update({
-                                                    _id: this.grp_id
+                                                    _id: this._id
                                                 }, {
                                                     $set: {
                                                         users: grp[0].users.filter(onlyUnique)
