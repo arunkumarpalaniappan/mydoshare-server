@@ -7,7 +7,8 @@ const data = {
     },
     "jwt": {
       "key": "mydoshare@arunkumarpalaniappan.me",
-      "alg": "HS256"
+      "alg": "HS256",
+      "expires": 10800
     },
     "log":{
       "name": "log",
