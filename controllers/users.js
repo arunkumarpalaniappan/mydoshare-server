@@ -1,7 +1,7 @@
 const Boom = require("boom");
 const Users = require("../models/users");
 exports.index = (request,response) => {
-    return {online: true}
+    return {http: 200, auth: 'required', api: 401, msg: 'Missing API Key'}
 }
 exports.authenticateUser = (request, response) => {
     const payload = request.payload;

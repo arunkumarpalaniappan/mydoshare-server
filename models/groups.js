@@ -18,20 +18,15 @@ exports.create = function () {
                         reject(err);
                     }
                     this.id = res._id;
-                    exports.createGroupExpenses.call(this).then(exp => {
-                            exports.joinUsertoGroup.call({
-                                    user_id: this.user._id,
-                                    grp_id: this.id
-                                })
-                                .then(addusr => {
-                                    resolve(addusr);
-                                })
-                                .catch(addusrerr => {
-                                    reject(addusrerr);
-                                });
+                    exports.joinUsertoGroup.call({
+                        user_id: this.user._id,
+                        grp_id: this.id
+                    })
+                        .then(addusr => {
+                            resolve(addusr);
                         })
-                        .catch(err => {
-                            reject(err);
+                        .catch(addusrerr => {
+                            reject(addusrerr);
                         });
                 });
             } else {
@@ -67,10 +62,10 @@ exports.update = function () {
             _id: this._id
         }).then(grp => {
             if (grp.length) {
-                    exports.joinUsertoGroup.call({
-                        user_id: this.user,
-                        grp_id: this._id
-                    })
+                exports.joinUsertoGroup.call({
+                    user_id: this.user,
+                    grp_id: this._id
+                })
                     .then(res => resolve(res))
                     .catch(err => reject(err));
             } else {
@@ -114,146 +109,127 @@ exports.createGroupExpenses = function () {
 exports.joinUsertoGroup = function () {
     return new Promise((resolve, reject) => {
         _usersSchema.find({
-                _id: this.user_id
-            }).then(usr => {
-                if (usr.length) {
-                    usr[0].grps[usr[0].grps.length] = this.grp_id;
-                    _usersSchema.update({
-                            _id: this.user_id
-                        }, {
-                            $set: {
-                                grps: usr[0].grps.filter(onlyUnique)
-                            }
-                        })
-                        .then(resp => {
-                            _groupsSchema.find({
-                                _id: this.grp_id
-                            }).then(grp => {
-                                if (grp.length) {
-                                    if(grp[0].users[this.user_id]) {
-                                        reject({code:1010, msg: 'User already in the group'});
-                                    } else {
-                                        const userGrp = {};
-                                        userGrp[this.user_id] = usr[0].name;
-                                        grp[0].users[grp[0].users.length] = userGrp
-                                        _groupsSchema.update({
-                                                _id: this.grp_id
-                                            }, {
-                                                $set: {
-                                                    users: grp[0].users
-                                                }
-                                            })
-                                            .then(grpresp => {
-                                                const customSchema = _customSchema(this.grp_id);
-                                                const newAddition = {};
-                                                newAddition[`${this.user_id}_exp`] = [];
-                                                newAddition[`${this.user_id}_paid`] = [];
-                                                const paidName = `${this.user_id}_paid`;
-                                                customSchema.update({}, newAddition, {
-                                                        multi: true
-                                                    })
-                                                    .then(schemaresp => {
-                                                        resolve(schemaresp);
-                                                    })
-                                                    .catch(schemaerr => {
-                                                        reject(schemaerr);
-                                                    })
-                                            })
-                                            .catch(grperr => {
-                                                reject(grperr);
-                                            })
-                                    }
-                                } else {
-                                    reject({
-                                        code: 1007,
-                                        msg: "Group doesn't exists."
-                                    })
-                                }
-                            });
-                        })
-                        .catch(err => {
-                            reject(err)
-                        });
-                } else {
-                    reject({
-                        code: 1001,
-                        msg: "Invalid User"
+            _id: this.user_id
+        }).then(usr => {
+            if (usr.length) {
+                usr[0].grps[usr[0].grps.length] = this.grp_id;
+                _usersSchema.update({
+                    _id: this.user_id
+                }, {
+                        $set: {
+                            grps: usr[0].grps.filter(onlyUnique)
+                        }
                     })
-                }
-            })
+                    .then(resp => {
+                        _groupsSchema.find({
+                            _id: this.grp_id
+                        }).then(grp => {
+                            if (grp.length) {
+                                if (grp[0].users[this.user_id]) {
+                                    reject({ code: 1010, msg: 'User already in the group' });
+                                } else {
+                                    const userGrp = {};
+                                    userGrp[this.user_id] = usr[0].name;
+                                    grp[0].users[grp[0].users.length] = userGrp
+                                    _groupsSchema.update({
+                                        _id: this.grp_id
+                                    }, {
+                                            $set: {
+                                                users: grp[0].users
+                                            }
+                                        })
+                                        .then(grpresp => {
+                                            resolve(grpresp);
+                                        })
+                                        .catch(grperr => {
+                                            reject(grperr);
+                                        })
+                                }
+                            } else {
+                                reject({
+                                    code: 1007,
+                                    msg: "Group doesn't exists."
+                                })
+                            }
+                        });
+                    })
+                    .catch(err => {
+                        reject(err)
+                    });
+            } else {
+                reject({
+                    code: 1001,
+                    msg: "Invalid User"
+                })
+            }
+        })
             .catch(usrerr => reject(usrerr));
     });
 };
 
 exports.remove = function () {
-    console.log(this)
     return new Promise((resolve, reject) => {
         _groupsSchema.find({
             _id: this._id
         }).then(grp => {
             if (grp.length) {
                 _usersSchema.find({
-                        _id: this.user
-                    }).then(usr => {
-                        if (usr.length) {
-                            const grpindex = usr[0].grps.indexOf(this._id);
-                            console.log(grpindex);
-                            if (grpindex > -1) {
-                                usr[0].grps.splice(grpindex, 1);
-                            }
-                            console.log(usr[0].grps)
-                            _usersSchema.update({
-                                    _id: this.user
-                                }, {
-                                    $set: {
-                                        grps: usr[0].grps.filter(onlyUnique)
-                                    }
-                                })
-                                .then(resp => {
-                                    console.log(this)
-                                    _groupsSchema.find({
-                                        _id: this._id
-                                    }).then(grp => {
-                                        if (grp.length) {
-                                            console.log(Object.keys(grp[0].users))
-                                            
-                                            const usrIndex = Object.keys(grp[0].users).indexOf(this.user);
-                                            console.log(usrIndex)
-                                            if (usrIndex > -1) {
-                                                grp[0].users.splice(usrIndex, 1);
-                                            }
-                                            console.log(grp[0].users)
-                                            _groupsSchema.update({
-                                                    _id: this._id
-                                                }, {
-                                                    $set: {
-                                                        users: grp[0].users.filter(onlyUnique)
-                                                    }
-                                                })
-                                                .then(grpresp => {
-                                                    resolve(grpresp);
-                                                })
-                                                .catch(grperr => {
-                                                    reject(grperr);
-                                                })
-                                        } else {
-                                            reject({
-                                                code: 1007,
-                                                msg: "Group doesn't exists."
-                                            })
-                                        }
-                                    });
-                                })
-                                .catch(err => {
-                                    reject(err)
-                                });
-                        } else {
-                            reject({
-                                code: 1001,
-                                msg: "Invalid User"
-                            })
+                    _id: this.user
+                }).then(usr => {
+                    if (usr.length) {
+                        const grpindex = usr[0].grps.indexOf(this._id);
+                        if (grpindex > -1) {
+                            usr[0].grps.splice(grpindex, 1);
                         }
-                    })
+                        _usersSchema.update({
+                            _id: this.user
+                        }, {
+                                $set: {
+                                    grps: usr[0].grps.filter(onlyUnique)
+                                }
+                            })
+                            .then(resp => {
+                                _groupsSchema.find({
+                                    _id: this._id
+                                }).then(grp => {
+                                    if (grp.length) {
+                                        let updatedUser = [];
+                                        grp[0].users.map(iUsr => {
+                                            if (!Object.keys(iUsr).includes(this.user)) {
+                                                updatedUser[updatedUser.length] = iUsr;
+                                            }
+                                        })
+                                        _groupsSchema.update({
+                                            _id: this._id
+                                        }, {
+                                                $set: {
+                                                    users: updatedUser
+                                                }
+                                            })
+                                            .then(grpresp => {
+                                                resolve(grpresp);
+                                            })
+                                            .catch(grperr => {
+                                                reject(grperr);
+                                            })
+                                    } else {
+                                        reject({
+                                            code: 1007,
+                                            msg: "Group doesn't exists."
+                                        })
+                                    }
+                                });
+                            })
+                            .catch(err => {
+                                reject(err)
+                            });
+                    } else {
+                        reject({
+                            code: 1001,
+                            msg: "Invalid User"
+                        })
+                    }
+                })
                     .catch(usrerr => reject(usrerr));
             } else {
                 reject({

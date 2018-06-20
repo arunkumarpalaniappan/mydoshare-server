@@ -137,5 +137,51 @@ module.exports = [
                 }
             }
         }
+    },
+    {
+        path: '/share/{id}',
+        method: 'POST',
+        config: {
+            handler: expenses.create,
+            auth: 'jwt',
+            validate: {
+                payload: {
+                    'name': Joi.string().required(),
+                    'category': Joi.string().required(),
+                    'expenses' : Joi.array().required()
+                }
+            }
+        }
+    },
+    {
+        path: '/share/{id}',
+        method: 'GET',
+        config: {
+            handler: expenses.get,
+            auth: 'jwt'
+        }
+    },
+    {
+        path: '/share/{id}/{exp}',
+        method: 'PUT',
+        config: {
+            handler: expenses.update,
+            auth: 'jwt',
+            validate: {
+                payload: {
+                    'name': Joi.string().required(),
+                    'category': Joi.string().required(),
+                    'expenses' : Joi.array().required()
+                }
+            }
+        }
+    },
+    {
+        path: '/share/{id}/{exp}',
+        method: 'DELETE',
+        config: {
+            handler: expenses.delete,
+            auth: 'jwt'
+        }
     }
 ];
