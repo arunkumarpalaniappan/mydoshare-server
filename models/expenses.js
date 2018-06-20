@@ -1,7 +1,8 @@
 const {
-    _customSchema
+    _customSchema,
+    _usersSchema
 } = require("../lib/db");
-
+const { errorCodes, successCodes } = require("../lib/statusCodes");
 exports.create = function () {
     return new Promise((resolve, reject) => {
         const grpSchema = _customSchema(this._id);
@@ -16,11 +17,29 @@ exports.create = function () {
             if(userExp[key].paid) {
                 group.paidBy.push(key);
             }
+            if(userExp[key].exp) {
+                _usersSchema.find({_id: key}).then(usr => {
+                    if (usr.length) {
+                        usr[0].notifications.push(`${this.payload.name} was created by ${this.payload.user.name}`)
+                            _usersSchema.update({
+                                _id: key
+                            }, {
+                                $set: {
+                                    notifications: usr[0].notifications 
+                                }
+                            })
+                            .then(resp => {
+                                console.log(resp);
+                            })
+                            .catch(err => console.log(err));
+                                }
+                    })
+                    .catch(err => console.log(err));
+            }
         });
         grpSchema.create(group).then(group => {
-            resolve(group);
+            resolve(successCodes.success.code);
         }).catch(err => {
-            console.log(err);
             reject(err);
         })
     });
@@ -33,10 +52,7 @@ exports.get = function () {
             if (grp.length) {
                 resolve(grp);
             } else {
-                reject({
-                    code: 1007,
-                    msg: "Group doesn't exists."
-                })
+                reject(errorCodes.invalidPassword.code)
             }
         });
     });
@@ -56,27 +72,40 @@ exports.update = function () {
             if(userExp[key].paid) {
                 group.paidBy.push(key);
             }
+            if(userExp[key].exp) {
+                _usersSchema.find({_id: key}).then(usr => {
+                    if (usr.length) {
+                        usr[0].notifications.push(`${this.payload.name} was updated by ${this.payload.user.name}`)
+                            _usersSchema.update({
+                                _id: key
+                            }, {
+                                $set: {
+                                    notifications: usr[0].notifications 
+                                }
+                            })
+                            .then(resp => {
+                                console.log(resp);
+                            })
+                            .catch(err => console.log(err));
+                                }
+                    })
+                    .catch(err => console.log(err));
+            }
         });
         grpSchema.find({_id: this.exp}).then(exp => {
             if (exp.length) {
                if(exp[0].paidBy.includes(this.payload.user._id)) {
                     grpSchema.updateOne({_id: this.exp},group).then(group => {
-                        resolve({code: 1011, msg: 'Success'});
+                        resolve(successCodes.success.code);
                     }).catch(err => {
                         console.log(err);
                         reject(err);
                     });
                } else {
-                reject({
-                    code: 1010,
-                    msg: "User not authorized to perform edit on this record."
-                });
+                reject(errorCodes.userNotAuthorized.code);
                }
             } else {
-                reject({
-                    code: 1012,
-                    msg: "Expense doesn't exists."
-                });
+                reject(errorCodes.invalidGroup.code);
             }
         })
         .catch(err => {
@@ -92,33 +121,48 @@ exports.delete = function () {
                 grpSchema.find({_id: this.exp}).then(exp => {
                     if (exp.length) {
                        if(exp[0].paidBy.includes(this.payload.user._id)) {
+                        Object.keys(JSON.parse((JSON.stringify(exp[0])))).map(user => {
+                               if(user.includes('_exp')) {
+                                   let userId = user.replace('_exp','');
+                                   console.log(userId);
+                                   _usersSchema.find({_id: userId}).then(usr => {
+                                    if (usr.length) {
+                                        console.log(usr)
+                                        usr[0].notifications.push(`${exp[0].name} was deleted by ${this.payload.user.name}`)
+                                            _usersSchema.update({
+                                                _id: userId
+                                            }, {
+                                                $set: {
+                                                    notifications: usr[0].notifications 
+                                                }
+                                            })
+                                            .then(resp => {
+                                                console.log(resp);
+                                            })
+                                            .catch(err => console.log(err));
+                                                }
+                                    })
+                                    .catch(err => console.log(err));
+                               }
+                           })
                             grpSchema.deleteOne({_id: this.exp}).then(group => {
-                                resolve({code: 1012, msg: 'Success'});
+                                resolve(successCodes.success.code);
                             }).catch(err => {
                                 console.log(err);
                                 reject(err);
                             });
                        } else {
-                        reject({
-                            code: 1010,
-                            msg: "User not authorized to perform edit on this record."
-                        });
+                        reject(errorCodes.userNotAuthorized.code);
                        }
                     } else {
-                        reject({
-                            code: 1012,
-                            msg: "Expense doesn't exists."
-                        });
+                        reject(errorCodes.invalidGroup.code);
                     }
                 })
                 .catch(err => {
                     console.log(err);
                 });
             } else {
-                reject({
-                    code: 1007,
-                    msg: "Group doesn't exists."
-                })
+                reject(errorCodes.invalidGroup.code)
             }
         });
     });

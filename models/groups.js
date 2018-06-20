@@ -3,6 +3,7 @@ const {
     _groupsSchema,
     _customSchema
 } = require("../lib/db");
+const { errorCodes, successCodes } = require("../lib/statusCodes");
 const onlyUnique = (value, index, self) => self.indexOf(value) === index;
 exports.create = function () {
     return new Promise((resolve, reject) => {
@@ -15,7 +16,7 @@ exports.create = function () {
                 });
                 group.save((err, res) => {
                     if (err) {
-                        reject(err);
+                        reject(errorCodes.dbSaveFailed.code);
                     }
                     this.id = res._id;
                     exports.joinUsertoGroup.call({
@@ -30,10 +31,7 @@ exports.create = function () {
                         });
                 });
             } else {
-                reject({
-                    code: 1006,
-                    msg: "Group already exists."
-                });
+                reject(errorCodes.groupExists.code);
             }
         })
     })
@@ -47,10 +45,7 @@ exports.get = function () {
             if (grp.length) {
                 resolve(grp[0].users);
             } else {
-                reject({
-                    code: 1007,
-                    msg: "Group doesn't exists."
-                })
+                reject(errorCodes.invalidGroup.code)
             }
         });
     })
@@ -69,10 +64,7 @@ exports.update = function () {
                     .then(res => resolve(res))
                     .catch(err => reject(err));
             } else {
-                reject({
-                    code: 1007,
-                    msg: "Group doesn't exists."
-                });
+                reject(errorCodes.invalidGroup.code);
             }
         });
     });
@@ -91,16 +83,12 @@ exports.createGroupExpenses = function () {
                 group.users = [this.user._id];
                 group.save((err, res) => {
                     if (err) {
-                        console.log(err)
-                        reject(err);
+                        reject(errorCodes.dbSaveFailed.code);
                     }
-                    resolve(res);
+                    resolve(successCodes.success.code);
                 });
             } else {
-                reject({
-                    code: 1008,
-                    msg: "Group already exists"
-                });
+                reject(errorCodes.groupExists.code);
             }
         });
     });
@@ -126,7 +114,7 @@ exports.joinUsertoGroup = function () {
                         }).then(grp => {
                             if (grp.length) {
                                 if (grp[0].users[this.user_id]) {
-                                    reject({ code: 1010, msg: 'User already in the group' });
+                                    reject(errorCodes.userAlreadyinGroup.code);
                                 } else {
                                     const userGrp = {};
                                     userGrp[this.user_id] = usr[0].name;
@@ -139,31 +127,25 @@ exports.joinUsertoGroup = function () {
                                             }
                                         })
                                         .then(grpresp => {
-                                            resolve(grpresp);
+                                            resolve(successCodes.success.code);
                                         })
                                         .catch(grperr => {
-                                            reject(grperr);
+                                            reject(errorCodes.dbUpdateFailed.code);
                                         })
                                 }
                             } else {
-                                reject({
-                                    code: 1007,
-                                    msg: "Group doesn't exists."
-                                })
+                                reject(errorCodes.invalidGroup.code);
                             }
                         });
                     })
                     .catch(err => {
-                        reject(err)
+                        reject(errorCodes.dbUpdateFailed.code)
                     });
             } else {
-                reject({
-                    code: 1001,
-                    msg: "Invalid User"
-                })
+                reject(errorCodes.invalidUser.code)
             }
         })
-            .catch(usrerr => reject(usrerr));
+            .catch(usrerr => reject(errorCodes.dbFindFailed.code));
     });
 };
 
@@ -207,35 +189,26 @@ exports.remove = function () {
                                                 }
                                             })
                                             .then(grpresp => {
-                                                resolve(grpresp);
+                                                resolve(successCodes.success.code);
                                             })
                                             .catch(grperr => {
-                                                reject(grperr);
+                                                reject(errorCodes.dbUpdateFailed.code);
                                             })
                                     } else {
-                                        reject({
-                                            code: 1007,
-                                            msg: "Group doesn't exists."
-                                        })
+                                        reject(errorCodes.invalidGroup.code);
                                     }
                                 });
                             })
                             .catch(err => {
-                                reject(err)
+                                reject(errorCodes.dbUpdateFailed.code)
                             });
                     } else {
-                        reject({
-                            code: 1001,
-                            msg: "Invalid User"
-                        })
+                        reject(errorCodes.invalidUser.code);
                     }
                 })
-                    .catch(usrerr => reject(usrerr));
+                    .catch(usrerr => reject(errorCodes.dbFindFailed.code));
             } else {
-                reject({
-                    code: 1007,
-                    msg: "Group doesn't exists."
-                });
+                reject(errorCodes.invalidGroup.code);
             }
         });
     });

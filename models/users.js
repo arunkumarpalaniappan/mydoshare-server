@@ -3,6 +3,7 @@ const { isValidUser, generateHash } = require("../lib/userAuthentication");
 const { sendVerification, sendInvite, sendWelcome, sendReset } = require("../lib/email");
 const { _usersSchema } = require("../lib/db");
 const config = require("config");
+const { errorCodes, successCodes } = require("../lib/statusCodes");
 exports.authenticateUser = function () {
     return new Promise((resolve, reject) => {
         isValidUser(this).then(response => {
@@ -17,16 +18,16 @@ exports.authenticateUser = function () {
 exports.registerUser = function () {
     return new Promise((resolve, reject) => {
         isValidUser(this).then(response => {
-            reject({ code: 1005, msg: "User Already Exists" });
+            reject(errorCodes.userExists.code);
         })
         .catch(err => {
-            if(err.code === 1001) {
+            if(err === 1001) {
                 generateHash(this.password).then(hash => {
                     this.pwd = hash;
                     let user = new _usersSchema(this);
                     user.save( (err, res) => {
                         if (err) {
-                            reject(err);
+                            reject(errorCodes.dbSaveFailed.code);
                         }
                         const signedUrl = `http://${config.email.url}/verify/${res._id}`;
                         sendVerification.call({email : res.email, signedUrl})
@@ -47,7 +48,7 @@ exports.verify = function() {
         _usersSchema.find({_id: this.id}).then(usr => {
             if (usr.length) {
                 if(usr[0].verified) {
-                    reject({code: 1009, msg: 'Invalid Link'});
+                    reject(errorCodes.invalidLink.code);
                 } else {
                     _usersSchema.update({
                         _id: usr[0]._id
@@ -58,16 +59,16 @@ exports.verify = function() {
                     })
                     .then(resp => {
                         sendWelcome.call({email: usr[0].email, name: usr[0].name})
-                            .then(res => resolve({code: 2002, msg: 'User Verified'}))
+                            .then(res => resolve(successCodes.userVerified.code))
                             .catch(err => reject(err));
                     })
-                    .catch(err => reject(err));
+                    .catch(err => reject(errorCodes.dbUpdateFailed.code));
                     }
                 } else {
-                    reject({ code: 1001, msg: 'Invalid User' });
+                    reject(errorCodes.invalidUser.code);
                 }
             })
-            .catch(err => reject(err));
+            .catch(err => reject(errorCodes.dbFindFailed.code));
     });
 };
 
@@ -80,10 +81,10 @@ exports.inviteUser = function() {
                     .then(res => resolve(res))
                     .catch(err => reject(err));
                 } else {
-                    reject({ code: 1005, msg: 'User already exists' });
+                    reject(errorCodes.userExists.code);
                 }
             })
-            .catch(err => reject(err));
+            .catch(err => reject(errorCodes.dbFindFailed.code));
     });
 }
 
@@ -102,14 +103,54 @@ exports.resetPassword = function() {
                 .then(resp => {
                     const signedUrl = `http://${config.email.url}/reset/${uniqueResetHash}`;
                     sendReset.call({email: usr[0].email, signedUrl})
-                        .then(res => resolve({code: 2003, msg: 'Reset Email Sent'}))
+                        .then(res => resolve(successCodes.resetEmailSent.code))
                         .catch(err => reject(err));
                 })
-                .catch(err => reject(err));
+                .catch(err => reject(errorCodes.dbUpdateFailed.code));
             } else {
-                reject({ code: 1001, msg: 'Invalid User'});
+                reject(errorCodes.invalidUser.code);
             }
         })
-        .catch(err => reject(err));
+        .catch(err => reject(errorCodes.dbFindFailed.code));
     });
-}
+};
+
+exports.getNotifications = function () {
+    return new Promise((resolve, reject) => {
+        _usersSchema.find({
+            _id: this.user._id
+        }).then(usr => {
+            if (usr.length) {
+                resolve(usr[0].notifications);
+            } else {
+                reject(errorCodes.invalidUser.code)
+            }
+        });
+    })
+};
+
+exports.deleteNotification = function () {
+    return new Promise((resolve, reject) => {
+        _usersSchema.find({
+            _id: this.user._id
+        }).then(usr => {
+            if (usr.length) {
+                usr[0].notifications.splice(this.index, 1);
+                console.log(usr[0].notifications)
+                _usersSchema.update({
+                    _id: this.user._id
+                }, {
+                    $set: {
+                        notifications: usr[0].notifications
+                    }
+                })
+                .then(resp => {
+                    resolve(successCodes.deleteNotification.code)
+                })
+                .catch(err => reject(errorCodes.dbUpdateFailed.code));
+            } else {
+                reject(errorCodes.invalidUser.code);
+            }
+        });
+    })
+};

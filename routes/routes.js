@@ -183,5 +183,26 @@ module.exports = [
             handler: expenses.delete,
             auth: 'jwt'
         }
+    },
+    {
+        path: '/notifications',
+        method: 'GET',
+        config: {
+            handler: users.getNotifications,
+            auth: 'jwt'
+        }
+    },
+    {
+        path: '/notifications',
+        method: 'DELETE',
+        config: {
+            handler: users.deleteNotification,
+            auth: 'jwt',
+            validate: {
+                payload: {
+                    'index': Joi.number().required()
+                }
+            }
+        }
     }
 ];
