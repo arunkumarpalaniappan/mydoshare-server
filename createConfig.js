@@ -23,7 +23,15 @@ const data = {
         "host": process.env.DB_HOST || "localhost",
         "name": process.env.DB_NAME || "mydoshare",
         "port": process.env.DB_PORT || 27017
-    }
+    },
+    "email": {
+      "host": process.env.SMTP_HOST || "localhost",
+      "port": process.env.SMTP_PORT || 587, 
+      "user": process.env.SMTP_USER || "arunkumar", 
+      "pass": process.env.SMTP_PWD || "password", 
+      "secure": process.env.SMTP_SSL ||false,
+      "url": process.env.DOMAIN || "localhost"
+  }
   }
 
 fs.writeFileSync('./config/default.json',JSON.stringify(data));
