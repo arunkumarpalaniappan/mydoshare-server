@@ -59,7 +59,7 @@ const init = async () => {
     return server;
 };
 init().then(server => {
-        log.info('Server running at:', server.info.uri);
+        console.log('Server running at:', server.info.uri);
     })
     .catch(error => {
         console.log(error);
